@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="01713548-91a9-4c53-a929-a32e2c3ab32a" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="ef7ef68e-de4c-4005-8d44-f78ae7deea67" >
+		<salesforce:basic-connection username="amhatre@eniquesolutions.com" password="akshay12345" securityToken="ryT8AgtDl6SVd10HwDCXhVFOn" />
+	</salesforce:sfdc-config>
+	<flow name="publish-topicFlow" doc:id="28b1cedc-69fd-4cd7-8e25-c7ed7df3a9f1" >
+		<http:listener doc:name="Listener" doc:id="f1937c9f-b4d8-49f2-af8e-fb85b98a3c56" config-ref="HTTP_Listener_config" path="/pubtopic"/>
+		<salesforce:publish-topic doc:name="Publish topic" doc:id="7ae2a441-4a14-4483-9250-2ca4b3e49c66" config-ref="Salesforce_Config" topicName="#[payload.topic]" query="#[payload.query]"/>
+		<ee:transform doc:name="Transform Message" doc:id="dece9858-b155-4bba-a5ee-6c2471d553ed" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

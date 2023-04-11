@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="1f2d5b17-d80a-4666-a549-2bffa140367b" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="assignments" />
+	</db:config>
+	<flow name="salesforce-publish-subscriber-pocFlow" doc:id="ffaf7d3b-2f8d-495d-a7c6-030df8e666e4" >
+		<salesforce:subscribe-topic-listener doc:name="Subscribe topic listener" doc:id="6ed59fb2-b0a2-4f79-bfa7-7f32170a6531" config-ref="Salesforce_Config" topic="Sample4"/>
+		<logger level="INFO" doc:name="Logger" doc:id="2efec55c-e947-4b22-ad82-4d11bda9d349" message="#[payload]"/>
+		<choice doc:name="Choice" doc:id="9eefb742-8fc2-4df0-bc8b-c7d51afcc166" >
+			<when expression="#[attributes.'type' == &quot;created&quot;]">
+				<db:insert doc:name="Insert" doc:id="1da2f541-2e0f-4036-b4d0-1bb8275fa63b" config-ref="Database_Config">
+					<db:sql ><![CDATA[INSERT INTO emp_profile (id, Name, emp_email__c, emp_phone__c, emp_skills__c)
+VALUES (:id, :Name, :emp_email__c, :emp_phone__c, :emp_skills__c);]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	"id" : payload.Id,
+	"Name" : payload.Name,
+	"emp_email__c": payload.emp_email__c,
+	"emp_phone__c": payload.emp_phone__c,
+	"emp_skills__c" : payload.emp_skills__c
+}]]]></db:input-parameters>
+				</db:insert>
+			</when>
+			<when expression="#[attributes.'type' == &quot;updated&quot;]">
+				<db:update doc:name="Update" doc:id="a2c0d22d-8667-43e6-832d-aa75f6a21434" config-ref="Database_Config">
+					<db:sql ><![CDATA[UPDATE emp_profile
+SET Name = :Name, emp_email__c = :emp_email__c, emp_phone__c= :emp_phone__c, emp_skills__c=:emp_skills__c
+WHERE id = :id;]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	"id" : payload.Id,
+	"Name" : payload.Name,
+	"emp_email__c": payload.emp_email__c,
+	"emp_phone__c": payload.emp_phone__c,
+	"emp_skills__c" : payload.emp_skills__c
+}]]]></db:input-parameters>
+				</db:update>
+			</when>
+			<when expression="#[attributes.'type' == &quot;deleted&quot;]">
+				<db:delete doc:name="Delete" doc:id="7fdc74b0-b902-4faa-8ac5-9ed92148f308" config-ref="Database_Config">
+					<db:sql ><![CDATA[DELETE FROM emp_profile WHERE id = :id;]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	"id" : payload.Id
+}]]]></db:input-parameters>
+				</db:delete>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="bfb29ade-6039-452c-9f52-9d2d5c3bc5da" message='#["Error"]'/>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
